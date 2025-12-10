@@ -492,17 +492,18 @@
 
         /* Tooltip */
         .tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.9);
+            position: fixed;
+            background: rgba(0, 0, 0, 0.65);
             color: white;
             padding: 10px 15px;
             border-radius: 8px;
             font-size: 12px;
             pointer-events: none;
-            z-index: 10000;
+            z-index: 2147483647;
+            /* sit above generated items regardless of their z-index */
             white-space: nowrap;
             display: none;
-            border: 2px solid #fff;
+            /* border: 2px solid #fff; */
         }
 
         .tooltip.active {
@@ -601,7 +602,7 @@
     <div id="login-modal">
         <div class="login-box">
             <h1>Welcome to Chronoscope!</h1>
-            <p style="color: #fff; margin-bottom: 20px; font-size: 18px;">Enter your name to start decorating</p>
+            <p style="color: #fff; margin-bottom: 20px; font-size: 18px;">Enter your name to enter the room</p>
             <input type="text" id="username-input" placeholder="Your name..." maxlength="20">
             <br>
             <button id="login-btn">Let's Go!</button>
@@ -643,7 +644,7 @@
     <div id="prompt-modal">
         <div class="prompt-box">
             <h3 id="prompt-title">Add Furniture</h3>
-            <input type="text" id="prompt-input" placeholder="e.g., blue floral" maxlength="50">
+            <input type="text" id="prompt-input" placeholder="e.g., describe your item" maxlength="50">
             <div class="char-count" id="char-count">0/50</div>
             <div class="prompt-buttons">
                 <button class="cancel-btn" id="cancel-prompt">Cancel</button>
@@ -732,6 +733,16 @@
             '2034',
             '2036'
         ];
+
+        // Category example placeholders for prompts
+        const categoryExamples = {
+            'furniture': 'e.g., rocking chair',
+            'lighting': 'e.g., brass wall sconce',
+            'area rug': 'e.g., cream Moroccan rug',
+            'wall decor': 'e.g., heavy metal band poster',
+            'plants': 'e.g., ceiling hanging fern',
+            'accessories': 'e.g., ceramic vase with cobalt glaze'
+        };
 
         // Interaction state
         let isDragging = false;
@@ -834,6 +845,7 @@
                 if (isGenerating) return;
                 selectedCategory = btn.dataset.category;
                 promptTitle.textContent = `Add ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`;
+                promptInput.placeholder = categoryExamples[selectedCategory] || 'e.g., describe your item';
                 promptInput.value = '';
                 charCount.textContent = '0/50';
                 charCount.classList.remove('limit');
