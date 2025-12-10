@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronoscope - Decorate Your Room!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Login Modal */
+        #login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        #login-modal.hidden {
+            display: none;
+        }
+
+        .login-box {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            padding: 40px;
+            border-radius: 20px;
+            border: 5px solid #fff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .login-box h1 {
+            color: #fff;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-box input {
+            width: 300px;
+            padding: 15px;
+            font-size: 18px;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+        .login-box button {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #ff6b6b;
+            color: white;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .login-box button:hover {
+            transform: scale(1.1);
+            background: #ff5252;
+        }
+
+        /* Main Container */
+        #app-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        #app-container.loading {
+            pointer-events: none;
+        }
+
+        /* Category Toolbar */
+        #category-toolbar {
+            width: 200px;
+            background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
+            border-right: 5px solid #fff;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s;
+        }
+
+        #app-container.loading #category-toolbar {
+            opacity: 0.3;
+        }
+
+        #category-toolbar h2 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .category-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #fff;
+            border: 3px solid #333;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 3px 3px 0 #333;
+        }
+
+        .category-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #333;
+        }
+
+        .category-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0 #333;
+        }
+
+        /* Room Container */
+        #room-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Room Header */
+        #room-header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid #fff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s;
+        }
+
+        #app-container.loading #room-header {
+            opacity: 0.3;
+        }
+
+        #room-header h1 {
+            color: #fff;
+            font-size: 32px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Room Stage */
+        #room-stage {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Navigation Arrows */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border: 4px solid #333;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 30px;
+            font-weight: bold;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        #app-container.loading .nav-arrow {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .nav-arrow:hover {
+            transform: translateY(-50%) scale(1.1);
+            background: #ffeb3b;
+        }
+
+        .nav-arrow.left {
+            left: 20px;
+        }
+
+        .nav-arrow.right {
+            right: 20px;
+        }
+
+        /* Prompt Modal */
+        #prompt-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #prompt-modal.active {
+            display: flex;
+        }
+
+        .prompt-box {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 30px;
+            border-radius: 15px;
+            border: 4px solid #333;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            min-width: 400px;
+        }
+
+        .prompt-box h3 {
+            margin-bottom: 15px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .prompt-box input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 3px solid #333;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+
+        .prompt-box .char-count {
+            text-align: right;
+            font-size: 12px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .prompt-box .char-count.limit {
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        .prompt-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .prompt-buttons button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 3px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .prompt-buttons .generate-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .prompt-buttons .generate-btn:hover {
+            background: #45a049;
+        }
+
+        .prompt-buttons .cancel-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .prompt-buttons .cancel-btn:hover {
+            background: #da190b;
+        }
+
+        /* Decor Item */
+        .decor-item {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            transition: opacity 0.3s;
+        }
+
+        .decor-item.generating {
+            pointer-events: none;
+        }
+
+        .decor-item img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+        }
+
+        /* Loading Indicator */
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 4px solid #333;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .loading-indicator .dots {
+            display: inline-block;
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+
+        .loading-indicator .dots::after {
+            content: '...';
+            animation: dots-content 1.5s infinite;
+        }
+
+        @keyframes dots-content {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+
+        .error-message {
+            color: #ff0000;
+            margin-top: 10px;
+        }
+
+        /* Control Handles */
+        .decor-item.selected {
+            outline: 3px dashed #ff6b6b;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            display: none;
+        }
+
+        .decor-item.selected .resize-handle {
+            display: block;
+        }
+
+        .resize-handle.nw {
+            top: -7px;
+            left: -7px;
+            cursor: nw-resize;
+        }
+
+        .resize-handle.ne {
+            top: -7px;
+            right: -7px;
+            cursor: ne-resize;
+        }
+
+        .resize-handle.sw {
+            bottom: -7px;
+            left: -7px;
+            cursor: sw-resize;
+        }
+
+        .resize-handle.se {
+            bottom: -7px;
+            right: -7px;
+            cursor: se-resize;
+        }
+
+        .rotate-handle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #4caf50;
+            border: 2px solid #333;
+            border-radius: 50%;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: grab;
+            display: none;
+        }
+
+        .decor-item.selected .rotate-handle {
+            display: block;
+        }
+
+        .rotate-handle:active {
+            cursor: grabbing;
+        }
+
+        /* Control Buttons */
+        .control-buttons {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            display: none;
+            gap: 5px;
+        }
+
+        .decor-item.selected .control-buttons {
+            display: flex;
+        }
+
+        .control-btn {
+            width: 30px;
+            height: 30px;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: #ffeb3b;
+            transform: scale(1.1);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 10000;
+            white-space: nowrap;
+            display: none;
+            border: 2px solid #fff;
+        }
+
+        .tooltip.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal">
+        <div class="login-box">
+            <h1>🎨 Welcome to Chronoscope! 🎨</h1>
+            <p style="color: #fff; margin-bottom: 20px; font-size: 18px;">Enter your name to start decorating</p>
+            <input type="text" id="username-input" placeholder="Your name..." maxlength="20">
+            <br>
+            <button id="login-btn">Let's Go!</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-container" style="display: none;">
+        <!-- Category Toolbar -->
+        <div id="category-toolbar">
+            <h2>🛋️ Categories</h2>
+            <button class="category-btn" data-category="furniture">Furniture</button>
+            <button class="category-btn" data-category="lighting">Lighting</button>
+            <button class="category-btn" data-category="area rug">Area Rug</button>
+            <button class="category-btn" data-category="wall decor">Wall Decor</button>
+            <button class="category-btn" data-category="plants">Plants</button>
+            <button class="category-btn" data-category="accessories">Accessories</button>
+        </div>
+
+        <!-- Room Container -->
+        <div id="room-container">
+            <!-- Room Header -->
+            <div id="room-header">
+                <h1 id="room-title">Room 1</h1>
+            </div>
+
+            <!-- Room Stage -->
+            <div id="room-stage">
+                <!-- Navigation Arrows -->
+                <div class="nav-arrow left" id="prev-room">◀</div>
+                <div class="nav-arrow right" id="next-room">▶</div>
+
+                <!-- Decor items will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Modal -->
+    <div id="prompt-modal">
+        <div class="prompt-box">
+            <h3 id="prompt-title">Add Furniture</h3>
+            <input type="text" id="prompt-input" placeholder="e.g., mid century modern king bed" maxlength="50">
+            <div class="char-count" id="char-count">0/50</div>
+            <div class="prompt-buttons">
+                <button class="cancel-btn" id="cancel-prompt">Cancel</button>
+                <button class="generate-btn" id="generate-btn">Generate!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- Loading Indicator Template -->
+    <template id="loading-template">
+        <div class="loading-indicator">
+            <div>Generating<span class="dots"></span></div>
+        </div>
+    </template>
+
+    <script type="module">
+        // Chronoscope - AI Room Decorator
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            serverTimestamp,
+            onSnapshot,
+            query,
+            where,
+            orderBy,
+            doc,
+            updateDoc,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+        // =====================
+        // Firebase Setup
+        // =====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAiVMHPN6yspPkwzugbF1NZoVgjiRr8-XU",
+            authDomain: "sharedminds-b.firebaseapp.com",
+            projectId: "sharedminds-b",
+            storageBucket: "sharedminds-b.firebasestorage.app",
+            messagingSenderId: "801466485785",
+            appId: "1:801466485785:web:a2e6f08b7d88b10ce4ee88"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // =====================
+        // Global State
+        // =====================
+        let userName = '';
+        let currentRoom = 1;
+        let selectedCategory = '';
+        let isGenerating = false;
+        let selectedItem = null;
+
+        // Interaction state
+        let isDragging = false;
+        let isResizing = false;
+        let isRotating = false;
+        let dragStart = { x: 0, y: 0 };
+        let itemStart = { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
+        let rotateCenter = { x: 0, y: 0 };
+
+        // =====================
+        // DOM Elements
+        // =====================
+        const loginModal = document.getElementById('login-modal');
+        const usernameInput = document.getElementById('username-input');
+        const loginBtn = document.getElementById('login-btn');
+        const appContainer = document.getElementById('app-container');
+        const roomStage = document.getElementById('room-stage');
+        const roomTitle = document.getElementById('room-title');
+        const prevRoomBtn = document.getElementById('prev-room');
+        const nextRoomBtn = document.getElementById('next-room');
+        const promptModal = document.getElementById('prompt-modal');
+        const promptTitle = document.getElementById('prompt-title');
+        const promptInput = document.getElementById('prompt-input');
+        const charCount = document.getElementById('char-count');
+        const generateBtn = document.getElementById('generate-btn');
+        const cancelPromptBtn = document.getElementById('cancel-prompt');
+        const tooltip = document.getElementById('tooltip');
+
+        // =====================
+        // Room Background Setup
+        // =====================
+        // Convert the uploaded image to base64 or use a URL
+        // For now, using a placeholder - you can replace this with your actual room image
+        const ROOM_BACKGROUND = 'roomOutline.png';
+
+        roomStage.style.backgroundImage = `url("${ROOM_BACKGROUND}")`;
+
+        // =====================
+        // Login Handling
+        // =====================
+        function handleLogin() {
+            const name = usernameInput.value.trim();
+            if (!name) {
+                alert('Please enter your name!');
+                return;
+            }
+            userName = name;
+            loginModal.classList.add('hidden');
+            appContainer.style.display = 'flex';
+            loadRoomData(currentRoom);
+        }
+
+        loginBtn.addEventListener('click', handleLogin);
+        usernameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        // =====================
+        // Category Selection
+        // =====================
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (isGenerating) return;
+                selectedCategory = btn.dataset.category;
+                promptTitle.textContent = `Add ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`;
+                promptInput.value = '';
+                charCount.textContent = '0/50';
+                charCount.classList.remove('limit');
+                promptModal.classList.add('active');
+                promptInput.focus();
+            });
+        });
+
+        // =====================
+        // Prompt Input Handling
+        // =====================
+        promptInput.addEventListener('input', () => {
+            const length = promptInput.value.length;
+            charCount.textContent = `${length}/50`;
+            if (length >= 50) {
+                charCount.classList.add('limit');
+            } else {
+                charCount.classList.remove('limit');
+            }
+        });
+
+        cancelPromptBtn.addEventListener('click', () => {
+            promptModal.classList.remove('active');
+        });
+
+        generateBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert('Please enter a description!');
+                return;
+            }
+
+            promptModal.classList.remove('active');
+            await generateDecorItem(selectedCategory, prompt);
+        });
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') generateBtn.click();
+            if (e.key === 'Escape') cancelPromptBtn.click();
+        });
+
+        // =====================
+        // Room Navigation
+        // =====================
+        prevRoomBtn.addEventListener('click', () => {
+            if (isGenerating) return;
+            currentRoom = currentRoom > 1 ? currentRoom - 1 : 24;
+            updateRoom();
+        });
+
+        nextRoomBtn.addEventListener('click', () => {
+            if (isGenerating) return;
+            currentRoom = currentRoom < 24 ? currentRoom + 1 : 1;
+            updateRoom();
+        });
+
+        function updateRoom() {
+            roomTitle.textContent = `Room ${currentRoom}`;
+            loadRoomData(currentRoom);
+        }
+
+        // =====================
+        // Image Generation Pipeline
+        // =====================
+        async function generateDecorItem(category, description) {
+            isGenerating = true;
+            appContainer.classList.add('loading');
+
+            const loadingEl = document.getElementById('loading-template').content.cloneNode(true);
+            const loadingIndicator = loadingEl.querySelector('.loading-indicator');
+            roomStage.appendChild(loadingIndicator);
+
+            const MAX_ATTEMPTS = 3;
+            let success = false;
+
+            for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                console.log(`Generation attempt ${attempt}/${MAX_ATTEMPTS}`);
+
+                try {
+                    const result = await attemptGeneration(category, description);
+
+                    if (result && result.imageUrl) {
+                        // Add to Firebase
+                        const stageRect = roomStage.getBoundingClientRect();
+                        const centerX = stageRect.width / 2 - 75; // 75 = half of 150px default size
+                        const centerY = stageRect.height / 2 - 75;
+
+                        await addDoc(collection(db, 'chronoscope'), {
+                            userName,
+                            roomNumber: currentRoom,
+                            category,
+                            prompt: description,
+                            imageUrl: result.imageUrl,
+                            x: centerX,
+                            y: centerY,
+                            width: 150,
+                            height: 150,
+                            rotation: 0,
+                            zIndex: Date.now(), // Use timestamp for unique z-index
+                            createdAt: serverTimestamp()
+                        });
+
+                        success = true;
+                        break;
+                    }
+                } catch (error) {
+                    console.error(`Attempt ${attempt} failed:`, error);
+                }
+
+                if (attempt < MAX_ATTEMPTS) {
+                    loadingIndicator.querySelector('div').innerHTML = `Attempt ${attempt} failed, retrying<span class="dots"></span>`;
+                }
+            }
+
+            roomStage.removeChild(loadingIndicator);
+
+            if (!success) {
+                const errorEl = document.createElement('div');
+                errorEl.className = 'loading-indicator';
+                errorEl.innerHTML = '<div>Description could not be generated,<br>please try another</div>';
+                roomStage.appendChild(errorEl);
+
+                setTimeout(() => {
+                    roomStage.removeChild(errorEl);
+                }, 3000);
+            }
+
+            isGenerating = false;
+            appContainer.classList.remove('loading');
+        }
+
+        async function attemptGeneration(category, description) {
+            const replicateProxy = "https://itp-ima-replicate-proxy.web.app/api/create_n_get";
+            const authToken = "";
+
+            // Generate image
+            const cleanedPrompt = description.replace(/,/g, '');
+            const imagePrompt = `${category}: ${cleanedPrompt}`;
+
+            const imageData = {
+                model: "google/imagen-4-fast",
+                input: { prompt: imagePrompt }
+            };
+
+            const imageOptions = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(imageData)
+            };
+
+            const imageResponse = await fetch(replicateProxy, imageOptions);
+            const imageJson = await imageResponse.json();
+
+            if (!imageJson || !imageJson.output) {
+                throw new Error('Image generation failed');
+            }
+
+            const originalImageUrl = imageJson.output;
+
+            // Remove background
+            const rembgData = {
+                model: "bria/remove-background",
+                input: { image: originalImageUrl }
+            };
+
+            const rembgOptions = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(rembgData)
+            };
+
+            const rembgResponse = await fetch(replicateProxy, rembgOptions);
+            const rembgJson = await rembgResponse.json();
+
+            if (!rembgJson || !rembgJson.output) {
+                throw new Error('Background removal failed');
+            }
+
+            return {
+                imageUrl: rembgJson.output
+            };
+        }
+
+        // =====================
+        // Firebase Data Loading
+        // =====================
+        function loadRoomData(roomNumber) {
+            // Clear existing items
+            document.querySelectorAll('.decor-item').forEach(el => el.remove());
+
+            // Query items for this room
+            const q = query(
+                collection(db, 'chronoscope'),
+                where('roomNumber', '==', roomNumber),
+                orderBy('createdAt', 'asc')
+            );
+
+            onSnapshot(q, (snapshot) => {
+                const existingIds = new Set();
+
+                snapshot.forEach((doc) => {
+                    const id = doc.id;
+                    const data = doc.data();
+                    existingIds.add(id);
+
+                    let itemEl = document.querySelector(`[data-item-id="${id}"]`);
+
+                    if (!itemEl) {
+                        itemEl = createDecorItem(id, data);
+                        roomStage.appendChild(itemEl);
+                    } else {
+                        updateDecorItem(itemEl, data);
+                    }
+                });
+
+                // Remove items that no longer exist
+                document.querySelectorAll('.decor-item').forEach(el => {
+                    const id = el.dataset.itemId;
+                    if (!existingIds.has(id)) {
+                        el.remove();
+                    }
+                });
+            });
+        }
+
+        // =====================
+        // Decor Item Creation
+        // =====================
+        function createDecorItem(id, data) {
+            const item = document.createElement('div');
+            item.className = 'decor-item';
+            item.dataset.itemId = id;
+            item.dataset.userName = data.userName;
+            item.dataset.prompt = data.prompt;
+            item.dataset.timestamp = data.createdAt ? new Date(data.createdAt.toMillis()).toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }) : 'Just now';
+
+            const img = document.createElement('img');
+            img.src = data.imageUrl;
+            img.alt = data.prompt;
+            item.appendChild(img);
+
+            // Only add controls if user owns this item
+            if (data.userName === userName) {
+                // Resize handles
+                ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+                    const handle = document.createElement('div');
+                    handle.className = `resize-handle ${pos}`;
+                    handle.addEventListener('mousedown', (e) => startResize(e, item, pos));
+                    item.appendChild(handle);
+                });
+
+                // Rotate handle
+                const rotateHandle = document.createElement('div');
+                rotateHandle.className = 'rotate-handle';
+                rotateHandle.addEventListener('mousedown', (e) => startRotate(e, item));
+                item.appendChild(rotateHandle);
+
+                // Control buttons
+                const controls = document.createElement('div');
+                controls.className = 'control-buttons';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'control-btn';
+                deleteBtn.innerHTML = '🗑️';
+                deleteBtn.title = 'Delete';
+                deleteBtn.addEventListener('click', () => deleteItem(id));
+
+                const frontBtn = document.createElement('button');
+                frontBtn.className = 'control-btn';
+                frontBtn.innerHTML = '⬆️';
+                frontBtn.title = 'Bring to front';
+                frontBtn.addEventListener('click', () => bringToFront(id, data));
+
+                const backBtn = document.createElement('button');
+                backBtn.className = 'control-btn';
+                backBtn.innerHTML = '⬇️';
+                backBtn.title = 'Send to back';
+                backBtn.addEventListener('click', () => sendToBack(id, data));
+
+                controls.appendChild(deleteBtn);
+                controls.appendChild(frontBtn);
+                controls.appendChild(backBtn);
+                item.appendChild(controls);
+
+                // Make draggable
+                item.addEventListener('mousedown', (e) => {
+                    if (e.target === item || e.target === img) {
+                        startDrag(e, item);
+                    }
+                });
+            }
+
+            // Hover tooltip
+            item.addEventListener('mouseenter', (e) => showTooltip(e, item));
+            item.addEventListener('mouseleave', hideTooltip);
+
+            updateDecorItem(item, data);
+
+            return item;
+        }
+
+        function updateDecorItem(item, data) {
+            item.style.left = `${data.x}px`;
+            item.style.top = `${data.y}px`;
+            item.style.width = `${data.width}px`;
+            item.style.height = `${data.height}px`;
+            item.style.transform = `rotate(${data.rotation}deg)`;
+            item.style.zIndex = data.zIndex || 1;
+        }
+
+        // =====================
+        // Tooltip
+        // =====================
+        function showTooltip(e, item) {
+            const userName = item.dataset.userName;
+            const prompt = item.dataset.prompt;
+            const timestamp = item.dataset.timestamp;
+
+            tooltip.innerHTML = `
+        <strong>${userName}</strong><br>
+        ${prompt}<br>
+        <small>${timestamp}</small>
+    `;
+
+            tooltip.classList.add('active');
+            updateTooltipPosition(e);
+        }
+
+        function hideTooltip() {
+            tooltip.classList.remove('active');
+        }
+
+        function updateTooltipPosition(e) {
+            const padding = 10;
+            let x = e.clientX + padding;
+            let y = e.clientY + padding;
+
+            // Keep tooltip on screen
+            if (x + tooltip.offsetWidth > window.innerWidth) {
+                x = e.clientX - tooltip.offsetWidth - padding;
+            }
+            if (y + tooltip.offsetHeight > window.innerHeight) {
+                y = e.clientY - tooltip.offsetHeight - padding;
+            }
+
+            tooltip.style.left = `${x}px`;
+            tooltip.style.top = `${y}px`;
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (tooltip.classList.contains('active') && !isDragging && !isResizing && !isRotating) {
+                updateTooltipPosition(e);
+            }
+        });
+
+        // =====================
+        // Drag Handling
+        // =====================
+        function startDrag(e, item) {
+            if (isGenerating) return;
+
+            e.preventDefault();
+            isDragging = true;
+            selectedItem = item;
+
+            // Deselect all items
+            document.querySelectorAll('.decor-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+
+            hideTooltip();
+
+            dragStart.x = e.clientX;
+            dragStart.y = e.clientY;
+            itemStart.x = parseFloat(item.style.left) || 0;
+            itemStart.y = parseFloat(item.style.top) || 0;
+        }
+
+        // =====================
+        // Resize Handling
+        // =====================
+        function startResize(e, item, corner) {
+            if (isGenerating) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            isResizing = true;
+            selectedItem = item;
+
+            hideTooltip();
+
+            dragStart.x = e.clientX;
+            dragStart.y = e.clientY;
+            itemStart.width = item.offsetWidth;
+            itemStart.height = item.offsetHeight;
+            itemStart.x = parseFloat(item.style.left) || 0;
+            itemStart.y = parseFloat(item.style.top) || 0;
+            itemStart.corner = corner;
+        }
+
+        // =====================
+        // Rotate Handling
+        // =====================
+        function startRotate(e, item) {
+            if (isGenerating) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            isRotating = true;
+            selectedItem = item;
+
+            hideTooltip();
+
+            const rect = item.getBoundingClientRect();
+            rotateCenter.x = rect.left + rect.width / 2;
+            rotateCenter.y = rect.top + rect.height / 2;
+
+            const rotation = parseFloat(item.style.transform.match(/rotate\(([-\d.]+)deg\)/)?.[1] || 0);
+            itemStart.rotation = rotation;
+
+            const angle = Math.atan2(e.clientY - rotateCenter.y, e.clientX - rotateCenter.x);
+            itemStart.angle = angle - (rotation * Math.PI / 180);
+        }
+
+        // =====================
+        // Mouse Move Handler
+        // =====================
+        document.addEventListener('mousemove', (e) => {
+            if (!selectedItem) return;
+
+            if (isDragging) {
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+
+                const stageRect = roomStage.getBoundingClientRect();
+                const maxWidth = stageRect.width;
+                const maxHeight = stageRect.height;
+
+                let newX = itemStart.x + dx;
+                let newY = itemStart.y + dy;
+
+                // Keep within bounds
+                newX = Math.max(0, Math.min(newX, maxWidth - selectedItem.offsetWidth));
+                newY = Math.max(0, Math.min(newY, maxHeight - selectedItem.offsetHeight));
+
+                selectedItem.style.left = `${newX}px`;
+                selectedItem.style.top = `${newY}px`;
+            }
+
+            if (isResizing) {
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+
+                let newWidth = itemStart.width;
+                let newHeight = itemStart.height;
+                let newX = itemStart.x;
+                let newY = itemStart.y;
+
+                const corner = itemStart.corner;
+                const aspectRatio = itemStart.width / itemStart.height;
+
+                // Calculate new dimensions maintaining aspect ratio
+                if (corner.includes('e')) {
+                    newWidth = itemStart.width + dx;
+                } else if (corner.includes('w')) {
+                    newWidth = itemStart.width - dx;
+                    newX = itemStart.x + dx;
+                }
+
+                newHeight = newWidth / aspectRatio;
+
+                if (corner.includes('n')) {
+                    newY = itemStart.y + (itemStart.height - newHeight);
+                }
+
+                // Apply size limits
+                const stageRect = roomStage.getBoundingClientRect();
+                const maxSize = Math.min(stageRect.width, stageRect.height) * 0.25;
+                const minSize = 50;
+
+                newWidth = Math.max(minSize, Math.min(newWidth, maxSize));
+                newHeight = newWidth / aspectRatio;
+
+                // Adjust position if needed
+                if (corner.includes('n')) {
+                    newY = itemStart.y + (itemStart.height - newHeight);
+                }
+                if (corner.includes('w')) {
+                    newX = itemStart.x + (itemStart.width - newWidth);
+                }
+
+                selectedItem.style.width = `${newWidth}px`;
+                selectedItem.style.height = `${newHeight}px`;
+                selectedItem.style.left = `${newX}px`;
+                selectedItem.style.top = `${newY}px`;
+            }
+
+            if (isRotating) {
+                const angle = Math.atan2(e.clientY - rotateCenter.y, e.clientX - rotateCenter.x);
+                const rotation = (angle - itemStart.angle) * 180 / Math.PI;
+                selectedItem.style.transform = `rotate(${rotation}deg)`;
+            }
+        });
+
+        // =====================
+        // Mouse Up Handler
+        // =====================
+        document.addEventListener('mouseup', async () => {
+            if (!selectedItem) return;
+
+            if (isDragging || isResizing || isRotating) {
+                // Update Firebase
+                const id = selectedItem.dataset.itemId;
+                const updates = {
+                    x: parseFloat(selectedItem.style.left),
+                    y: parseFloat(selectedItem.style.top),
+                    width: selectedItem.offsetWidth,
+                    height: selectedItem.offsetHeight,
+                    rotation: parseFloat(selectedItem.style.transform.match(/rotate\(([-\d.]+)deg\)/)?.[1] || 0)
+                };
+
+                try {
+                    await updateDoc(doc(db, 'chronoscope', id), updates);
+                } catch (error) {
+                    console.error('Error updating item:', error);
+                }
+            }
+
+            isDragging = false;
+            isResizing = false;
+            isRotating = false;
+            selectedItem = null;
+        });
+
+        // =====================
+        // Item Control Functions
+        // =====================
+        async function deleteItem(id) {
+            if (!confirm('Delete this item?')) return;
+
+            try {
+                await deleteDoc(doc(db, 'chronoscope', id));
+            } catch (error) {
+                console.error('Error deleting item:', error);
+            }
+        }
+
+        async function bringToFront(id, data) {
+            try {
+                await updateDoc(doc(db, 'chronoscope', id), {
+                    zIndex: Date.now()
+                });
+            } catch (error) {
+                console.error('Error updating z-index:', error);
+            }
+        }
+
+        async function sendToBack(id, data) {
+            try {
+                await updateDoc(doc(db, 'chronoscope', id), {
+                    zIndex: 1
+                });
+            } catch (error) {
+                console.error('Error updating z-index:', error);
+            }
+        }
+
+        // =====================
+        // Click outside to deselect
+        // =====================
+        roomStage.addEventListener('click', (e) => {
+            if (e.target === roomStage) {
+                document.querySelectorAll('.decor-item').forEach(el => el.classList.remove('selected'));
+                selectedItem = null;
+            }
+        });
+    </script>
+</body>
+
+</html>
