@@ -229,7 +229,8 @@
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 3000000000000;
+            /* above generated items that use Date.now z-index */
         }
 
         #prompt-modal.active {
@@ -499,8 +500,8 @@
             border-radius: 8px;
             font-size: 12px;
             pointer-events: none;
-            z-index: 2147483647;
-            /* sit above generated items regardless of their z-index */
+            z-index: 3000000000001;
+            /* above generated items and modal backdrop */
             white-space: nowrap;
             display: none;
             /* border: 2px solid #fff; */
