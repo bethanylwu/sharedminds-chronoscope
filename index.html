@@ -211,7 +211,7 @@
         }
 
         .nav-arrow.left {
-            left: 20px;
+            left: calc(200px + 20px);
         }
 
         .nav-arrow.right {
@@ -508,6 +508,91 @@
         .tooltip.active {
             display: block;
         }
+
+        /* Carousel Animation */
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutLeft {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        #room-stage.transitioning-left {
+            animation: fadeOut 0.4s ease-in-out forwards;
+        }
+
+        #room-stage.transitioning-right {
+            animation: fadeOut 0.4s ease-in-out forwards;
+        }
+
+        #room-stage.transitioning-in-left {
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+
+        #room-stage.transitioning-in-right {
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
     </style>
 </head>
 
@@ -540,25 +625,25 @@
         <div id="room-container">
             <!-- Room Header -->
             <div id="room-header">
-                <h1 id="room-title">Room 1</h1>
+                <h1 id="room-title">Loading...</h1>
             </div>
 
             <!-- Room Stage -->
             <div id="room-stage">
-                <!-- Navigation Arrows -->
-                <div class="nav-arrow left" id="prev-room">◀</div>
-                <div class="nav-arrow right" id="next-room">▶</div>
-
                 <!-- Decor items will be added here dynamically -->
             </div>
         </div>
+
+        <!-- Navigation Arrows (outside room-stage to avoid animation) -->
+        <div class="nav-arrow left" id="prev-room">◀</div>
+        <div class="nav-arrow right" id="next-room">▶</div>
     </div>
 
     <!-- Prompt Modal -->
     <div id="prompt-modal">
         <div class="prompt-box">
             <h3 id="prompt-title">Add Furniture</h3>
-            <input type="text" id="prompt-input" placeholder="e.g., mid century modern king bed" maxlength="50">
+            <input type="text" id="prompt-input" placeholder="e.g., blue floral" maxlength="50">
             <div class="char-count" id="char-count">0/50</div>
             <div class="prompt-buttons">
                 <button class="cancel-btn" id="cancel-prompt">Cancel</button>
@@ -618,6 +703,36 @@
         let isGenerating = false;
         let selectedItem = null;
 
+        // =====================
+        // Room Names
+        // =====================
+        const roomNames = [
+            '1990',
+            '1992',
+            '1994',
+            '1996',
+            '1998',
+            '2000',
+            '2002',
+            '2004',
+            '2006',
+            '2008',
+            '2010',
+            '2012',
+            '2014',
+            '2016',
+            '2018',
+            '2020',
+            '2022',
+            '2024',
+            '2026',
+            '2028',
+            '2030',
+            '2032',
+            '2034',
+            '2036'
+        ];
+
         // Interaction state
         let isDragging = false;
         let isResizing = false;
@@ -654,6 +769,40 @@
 
         roomStage.style.backgroundImage = `url("${ROOM_BACKGROUND}")`;
 
+        // Get the background image's aspect ratio
+        let bgImageAspectRatio = 1; // Default to square
+        const bgImg = new Image();
+        bgImg.onload = () => {
+            bgImageAspectRatio = bgImg.width / bgImg.height;
+        };
+        bgImg.src = ROOM_BACKGROUND;
+
+        // Helper function to calculate background image visible dimensions
+        function getBackgroundImageDimensions() {
+            const containerRect = roomStage.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            const containerAspect = containerWidth / containerHeight;
+
+            let bgWidth, bgHeight, offsetX, offsetY;
+
+            if (containerAspect > bgImageAspectRatio) {
+                // Container is wider, image height fills container
+                bgHeight = containerHeight;
+                bgWidth = bgHeight * bgImageAspectRatio;
+                offsetX = (containerWidth - bgWidth) / 2;
+                offsetY = 0;
+            } else {
+                // Container is taller, image width fills container
+                bgWidth = containerWidth;
+                bgHeight = bgWidth / bgImageAspectRatio;
+                offsetX = 0;
+                offsetY = (containerHeight - bgHeight) / 2;
+            }
+
+            return { bgWidth, bgHeight, offsetX, offsetY, containerWidth, containerHeight };
+        }
+
         // =====================
         // Login Handling
         // =====================
@@ -673,6 +822,9 @@
         usernameInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') handleLogin();
         });
+
+        // Set initial room title
+        roomTitle.textContent = roomNames[currentRoom - 1];
 
         // =====================
         // Category Selection
@@ -726,21 +878,49 @@
         // =====================
         // Room Navigation
         // =====================
+        let lastRoomDirection = 'right'; // Track which direction we're moving
+
         prevRoomBtn.addEventListener('click', () => {
             if (isGenerating) return;
             currentRoom = currentRoom > 1 ? currentRoom - 1 : 24;
+            lastRoomDirection = 'left';
             updateRoom();
         });
 
         nextRoomBtn.addEventListener('click', () => {
             if (isGenerating) return;
             currentRoom = currentRoom < 24 ? currentRoom + 1 : 1;
+            lastRoomDirection = 'right';
             updateRoom();
         });
 
+        // Initialize room title on page load
+        window.addEventListener('load', () => {
+            if (roomTitle.textContent === 'Loading...') {
+                roomTitle.textContent = roomNames[currentRoom - 1];
+            }
+        });
+
         function updateRoom() {
-            roomTitle.textContent = `Room ${currentRoom}`;
-            loadRoomData(currentRoom);
+            const direction = lastRoomDirection === 'right' ? 'right' : 'left';
+
+            // Animate out
+            roomStage.classList.add(`transitioning-${direction}`);
+
+            // Update content after animation starts
+            setTimeout(() => {
+                roomTitle.textContent = roomNames[currentRoom - 1];
+                loadRoomData(currentRoom);
+
+                // Animate in
+                roomStage.classList.remove(`transitioning-${direction}`);
+                roomStage.classList.add(`transitioning-in-${direction}`);
+
+                // Clean up animation class
+                setTimeout(() => {
+                    roomStage.classList.remove(`transitioning-in-${direction}`);
+                }, 400);
+            }, 300);
         }
 
         // =====================
@@ -761,13 +941,13 @@
                 console.log(`Generation attempt ${attempt}/${MAX_ATTEMPTS}`);
 
                 try {
-                    const result = await attemptGeneration(category, description);
+                    const result = await attemptGeneration(category, description, roomNames[currentRoom - 1]);
 
                     if (result && result.imageUrl) {
                         // Add to Firebase
-                        const stageRect = roomStage.getBoundingClientRect();
-                        const centerX = stageRect.width / 2 - 75; // 75 = half of 150px default size
-                        const centerY = stageRect.height / 2 - 75;
+                        const { bgWidth, bgHeight, offsetX, offsetY } = getBackgroundImageDimensions();
+                        const centerX = (bgWidth / 2) - 75; // 75 = half of 150px default size
+                        const centerY = (bgHeight / 2) - 75;
 
                         await addDoc(collection(db, 'chronoscope'), {
                             userName,
@@ -780,6 +960,8 @@
                             width: 150,
                             height: 150,
                             rotation: 0,
+                            stageWidth: bgWidth,
+                            stageHeight: bgHeight,
                             zIndex: Date.now(), // Use timestamp for unique z-index
                             createdAt: serverTimestamp()
                         });
@@ -813,13 +995,13 @@
             appContainer.classList.remove('loading');
         }
 
-        async function attemptGeneration(category, description) {
+        async function attemptGeneration(category, description, roomName) {
             const replicateProxy = "https://itp-ima-replicate-proxy.web.app/api/create_n_get";
             const authToken = "";
 
             // Generate image
             const cleanedPrompt = description.replace(/,/g, '');
-            const imagePrompt = `${category}: ${cleanedPrompt}`;
+            const imagePrompt = `${category}: ${cleanedPrompt} in the style of ${roomName}`;
 
             const imageData = {
                 model: "google/imagen-4-fast",
@@ -999,10 +1181,32 @@
         }
 
         function updateDecorItem(item, data) {
-            item.style.left = `${data.x}px`;
-            item.style.top = `${data.y}px`;
-            item.style.width = `${data.width}px`;
-            item.style.height = `${data.height}px`;
+            const { bgWidth, bgHeight, offsetX, offsetY } = getBackgroundImageDimensions();
+            const containerRect = roomStage.getBoundingClientRect();
+
+            // Convert stored pixel values (relative to background image) to screen percentages
+            // The stored x, y are relative to the background image, so we need to:
+            // 1. Scale them based on current background dimensions vs stored dimensions
+            // 2. Add the offset to account for centering
+            // 3. Convert to percentage of container
+
+            const scaleX = bgWidth / (data.stageWidth || bgWidth);
+            const scaleY = bgHeight / (data.stageHeight || bgHeight);
+
+            const xPixels = (data.x * scaleX) + offsetX;
+            const yPixels = (data.y * scaleY) + offsetY;
+            const widthPixels = data.width * scaleX;
+            const heightPixels = data.height * scaleY;
+
+            const xPercent = (xPixels / containerRect.width) * 100;
+            const yPercent = (yPixels / containerRect.height) * 100;
+            const widthPercent = (widthPixels / containerRect.width) * 100;
+            const heightPercent = (heightPixels / containerRect.height) * 100;
+
+            item.style.left = `${xPercent}%`;
+            item.style.top = `${yPercent}%`;
+            item.style.width = `${widthPercent}%`;
+            item.style.height = `${heightPercent}%`;
             item.style.transform = `rotate(${data.rotation}deg)`;
             item.style.zIndex = data.zIndex || 1;
         }
@@ -1068,10 +1272,24 @@
 
             hideTooltip();
 
+            const { bgWidth, bgHeight, offsetX, offsetY } = getBackgroundImageDimensions();
+            const containerRect = roomStage.getBoundingClientRect();
+
             dragStart.x = e.clientX;
             dragStart.y = e.clientY;
-            itemStart.x = parseFloat(item.style.left) || 0;
-            itemStart.y = parseFloat(item.style.top) || 0;
+
+            // Store starting position in background image coordinates
+            const screenLeftPercent = parseFloat(item.style.left);
+            const screenTopPercent = parseFloat(item.style.top);
+            const screenLeftPx = (screenLeftPercent / 100) * containerRect.width;
+            const screenTopPx = (screenTopPercent / 100) * containerRect.height;
+
+            itemStart.x = (screenLeftPx - offsetX) / bgWidth * (containerRect.width / containerRect.width);
+            itemStart.y = (screenTopPx - offsetY) / bgHeight * (containerRect.height / containerRect.height);
+
+            // Simpler: convert screen pixels to bg image pixels
+            itemStart.x = screenLeftPx - offsetX;
+            itemStart.y = screenTopPx - offsetY;
         }
 
         // =====================
@@ -1087,12 +1305,33 @@
 
             hideTooltip();
 
+            const { bgWidth, bgHeight, offsetX, offsetY } = getBackgroundImageDimensions();
+            const containerRect = roomStage.getBoundingClientRect();
+
             dragStart.x = e.clientX;
             dragStart.y = e.clientY;
-            itemStart.width = item.offsetWidth;
-            itemStart.height = item.offsetHeight;
-            itemStart.x = parseFloat(item.style.left) || 0;
-            itemStart.y = parseFloat(item.style.top) || 0;
+
+            // Store dimensions in background image pixel coordinates
+            const screenWidthPercent = parseFloat(item.style.width);
+            const screenHeightPercent = parseFloat(item.style.height);
+            const screenLeftPercent = parseFloat(item.style.left);
+            const screenTopPercent = parseFloat(item.style.top);
+
+            const screenWidthPx = (screenWidthPercent / 100) * containerRect.width;
+            const screenHeightPx = (screenHeightPercent / 100) * containerRect.height;
+            const screenLeftPx = (screenLeftPercent / 100) * containerRect.width;
+            const screenTopPx = (screenTopPercent / 100) * containerRect.height;
+
+            itemStart.width = screenWidthPx / bgWidth * bgWidth;
+            itemStart.height = screenHeightPx / bgHeight * bgHeight;
+            itemStart.x = (screenLeftPx - offsetX) / bgWidth * bgWidth;
+            itemStart.y = (screenTopPx - offsetY) / bgHeight * bgHeight;
+
+            // Simpler approach
+            itemStart.width = screenWidthPx;
+            itemStart.height = screenHeightPx;
+            itemStart.x = screenLeftPx - offsetX;
+            itemStart.y = screenTopPx - offsetY;
             itemStart.corner = corner;
         }
 
@@ -1126,28 +1365,42 @@
         document.addEventListener('mousemove', (e) => {
             if (!selectedItem) return;
 
+            const { bgWidth, bgHeight, offsetX, offsetY } = getBackgroundImageDimensions();
+            const containerRect = roomStage.getBoundingClientRect();
+
             if (isDragging) {
                 const dx = e.clientX - dragStart.x;
                 const dy = e.clientY - dragStart.y;
 
-                const stageRect = roomStage.getBoundingClientRect();
-                const maxWidth = stageRect.width;
-                const maxHeight = stageRect.height;
+                // Convert screen pixel movement to background image pixels
+                const dxBgPixels = (dx / containerRect.width) * bgWidth;
+                const dyBgPixels = (dy / containerRect.height) * bgHeight;
 
-                let newX = itemStart.x + dx;
-                let newY = itemStart.y + dy;
+                let newX = itemStart.x + dxBgPixels;
+                let newY = itemStart.y + dyBgPixels;
 
-                // Keep within bounds
-                newX = Math.max(0, Math.min(newX, maxWidth - selectedItem.offsetWidth));
-                newY = Math.max(0, Math.min(newY, maxHeight - selectedItem.offsetHeight));
+                const itemWidthBg = (parseFloat(selectedItem.style.width) / 100) * bgWidth;
+                const itemHeightBg = (parseFloat(selectedItem.style.height) / 100) * bgHeight;
 
-                selectedItem.style.left = `${newX}px`;
-                selectedItem.style.top = `${newY}px`;
+                // Keep within bounds of background image
+                newX = Math.max(0, Math.min(newX, bgWidth - itemWidthBg));
+                newY = Math.max(0, Math.min(newY, bgHeight - itemHeightBg));
+
+                // Convert back to screen percentage
+                const screenX = ((newX + offsetX) / containerRect.width) * 100;
+                const screenY = ((newY + offsetY) / containerRect.height) * 100;
+
+                selectedItem.style.left = `${screenX}%`;
+                selectedItem.style.top = `${screenY}%`;
             }
 
             if (isResizing) {
                 const dx = e.clientX - dragStart.x;
                 const dy = e.clientY - dragStart.y;
+
+                // Convert screen pixel changes to background image pixels
+                const dxBgPixels = (dx / containerRect.width) * bgWidth;
+                const dyBgPixels = (dy / containerRect.height) * bgHeight;
 
                 let newWidth = itemStart.width;
                 let newHeight = itemStart.height;
@@ -1159,10 +1412,10 @@
 
                 // Calculate new dimensions maintaining aspect ratio
                 if (corner.includes('e')) {
-                    newWidth = itemStart.width + dx;
+                    newWidth = itemStart.width + dxBgPixels;
                 } else if (corner.includes('w')) {
-                    newWidth = itemStart.width - dx;
-                    newX = itemStart.x + dx;
+                    newWidth = itemStart.width - dxBgPixels;
+                    newX = itemStart.x + dxBgPixels;
                 }
 
                 newHeight = newWidth / aspectRatio;
@@ -1171,10 +1424,9 @@
                     newY = itemStart.y + (itemStart.height - newHeight);
                 }
 
-                // Apply size limits
-                const stageRect = roomStage.getBoundingClientRect();
-                const maxSize = Math.min(stageRect.width, stageRect.height) * 0.25;
-                const minSize = 50;
+                // Apply size limits (in pixels of background image)
+                const maxSize = bgWidth * 0.3; // 30% of background image
+                const minSize = bgWidth * 0.03; // 3% of background image
 
                 newWidth = Math.max(minSize, Math.min(newWidth, maxSize));
                 newHeight = newWidth / aspectRatio;
@@ -1187,10 +1439,20 @@
                     newX = itemStart.x + (itemStart.width - newWidth);
                 }
 
-                selectedItem.style.width = `${newWidth}px`;
-                selectedItem.style.height = `${newHeight}px`;
-                selectedItem.style.left = `${newX}px`;
-                selectedItem.style.top = `${newY}px`;
+                // Keep position within bounds
+                newX = Math.max(0, Math.min(newX, bgWidth - newWidth));
+                newY = Math.max(0, Math.min(newY, bgHeight - newHeight));
+
+                // Convert back to screen percentage
+                const screenX = ((newX + offsetX) / containerRect.width) * 100;
+                const screenY = ((newY + offsetY) / containerRect.height) * 100;
+                const screenWidth = (newWidth / containerRect.width) * 100;
+                const screenHeight = (newHeight / containerRect.height) * 100;
+
+                selectedItem.style.width = `${screenWidth}%`;
+                selectedItem.style.height = `${screenHeight}%`;
+                selectedItem.style.left = `${screenX}%`;
+                selectedItem.style.top = `${screenY}%`;
             }
 
             if (isRotating) {
@@ -1209,12 +1471,28 @@
             if (isDragging || isResizing || isRotating) {
                 // Update Firebase
                 const id = selectedItem.dataset.itemId;
+                const { bgWidth, bgHeight, offsetX, offsetY } = getBackgroundImageDimensions();
+                const containerRect = roomStage.getBoundingClientRect();
+
+                // Convert screen percentages back to background image pixels for storage
+                const screenLeftPx = (parseFloat(selectedItem.style.left) / 100) * containerRect.width;
+                const screenTopPx = (parseFloat(selectedItem.style.top) / 100) * containerRect.height;
+                const screenWidthPx = (parseFloat(selectedItem.style.width) / 100) * containerRect.width;
+                const screenHeightPx = (parseFloat(selectedItem.style.height) / 100) * containerRect.height;
+
+                const xPixels = screenLeftPx - offsetX;
+                const yPixels = screenTopPx - offsetY;
+                const widthPixels = screenWidthPx;
+                const heightPixels = screenHeightPx;
+
                 const updates = {
-                    x: parseFloat(selectedItem.style.left),
-                    y: parseFloat(selectedItem.style.top),
-                    width: selectedItem.offsetWidth,
-                    height: selectedItem.offsetHeight,
-                    rotation: parseFloat(selectedItem.style.transform.match(/rotate\(([-\d.]+)deg\)/)?.[1] || 0)
+                    x: xPixels,
+                    y: yPixels,
+                    width: widthPixels,
+                    height: heightPixels,
+                    rotation: parseFloat(selectedItem.style.transform.match(/rotate\(([-\d.]+)deg\)/)?.[1] || 0),
+                    stageWidth: bgWidth,
+                    stageHeight: bgHeight
                 };
 
                 try {
